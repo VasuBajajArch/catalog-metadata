@@ -110,7 +110,11 @@ class TestDatabricksCatalog(unittest.TestCase):
 
         self.assertEqual(frame["column_name"].tolist(), ["id"])
         self.assertEqual(cursor.parameters, ("public", "orders", "weird'name"))
-        self.assertIn("table_name IN (?, ?)", cursor.query)
+        self.assertIn(
+            "LOWER(table_name) IN (LOWER(?), LOWER(?))",
+            cursor.query,
+        )
+        self.assertIn("LOWER(table_schema) = LOWER(?)", cursor.query)
         self.assertNotIn("weird'name", cursor.query)
 
     def test_fetch_dataframe_normalizes_column_names(self):

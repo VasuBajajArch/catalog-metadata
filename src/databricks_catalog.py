@@ -341,12 +341,14 @@ def list_column_metadata(cursor, catalog, schema, table_names=None):
         SELECT table_name, column_name, full_data_type, is_nullable, comment,
                ordinal_position
         FROM {catalog_name}.information_schema.columns
-        WHERE table_schema = ?
+        WHERE LOWER(table_schema) = LOWER(?)
     """
     parameters = [schema]
     if table_names is not None:
-        placeholders = ", ".join("?" for _ in table_names)
-        query += f" AND table_name IN ({placeholders})"
+        query += (
+            f" AND LOWER(table_name) IN "
+            f"({', '.join('LOWER(?)' for _ in table_names)})"
+        )
         parameters.extend(table_names)
     query += " ORDER BY table_name, ordinal_position"
 

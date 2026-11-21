@@ -47,7 +47,8 @@ not receive the forwarded token and cannot list warehouses or browse catalogs.
 For visible tables and views, the app displays the table type, owner, comment,
 creation and last-altered timestamps, and column names, data types, nullability,
 and comments. It queries Unity Catalog `information_schema` metadata and uses
-parameterized filters for schema and table names.
+parameterized filters for schema and table names. Unity Catalog only returns
+column metadata for relations the signed-in user is permitted to interact with.
 
 ## Dependencies
 

@@ -61,43 +61,8 @@ st.caption(
 )
 
 
-def show_catalog_browser(cursor):
-    """Render the catalog, schema, table, and table-column browser."""
-    catalog_names = list_catalogs(cursor)
-    if not catalog_names:
-        st.info("No Unity Catalog catalogs are available to your account.")
-        return
-
-    if st.session_state.get("catalog_name") not in catalog_names:
-        st.session_state["catalog_name"] = catalog_names[0]
-    selected_catalog = st.selectbox(
-        "Catalog",
-        catalog_names,
-        key="catalog_name",
-    )
-    if st.session_state.get("_active_catalog") != selected_catalog:
-        st.session_state.pop("schema_name", None)
-        st.session_state.pop("selected_table_names", None)
-        st.session_state["_active_catalog"] = selected_catalog
-        st.session_state["_active_schema"] = None
-
-    schema_names = list_schemas(cursor, selected_catalog)
-    if not schema_names:
-        st.info("No schemas in this catalog are available to your account.")
-        return
-
-    if st.session_state.get("schema_name") not in schema_names:
-        st.session_state["schema_name"] = schema_names[0]
-    selected_schema = st.selectbox(
-        "Schema",
-        schema_names,
-        key="schema_name",
-    )
-    schema_scope = (selected_catalog, selected_schema)
-    if st.session_state.get("_active_schema") != schema_scope:
-        st.session_state.pop("selected_table_names", None)
-        st.session_state["_active_schema"] = schema_scope
-
+def show_catalog_browser(cursor, selected_catalog, selected_schema):
+    """Render table and column details for the selected catalog and schema."""
     table_metadata = list_table_metadata(
         cursor,
         selected_catalog,
@@ -168,7 +133,10 @@ def show_catalog_browser(cursor):
                 st.write(f"**Comment:** {comment}")
 
             table_columns = column_metadata[
-                column_metadata["table_name"] == table_name
+                column_metadata["table_name"]
+                .astype(str)
+                .str.casefold()
+                == table_name.casefold()
             ][
                 [
                     "column_name",
@@ -184,11 +152,18 @@ def show_catalog_browser(cursor):
                     "comment": "Comment",
                 }
             )
-            st.dataframe(
-                table_columns,
-                use_container_width=True,
-                hide_index=True,
-            )
+            if table_columns.empty:
+                st.info(
+                    "No column metadata is visible for this table. "
+                    "Check that your Unity Catalog permissions allow you to "
+                    "interact with it."
+                )
+            else:
+                st.dataframe(
+                    table_columns,
+                    use_container_width=True,
+                    hide_index=True,
+                )
 
 
 user_access_token = get_user_access_token(st.context.headers)
@@ -212,11 +187,12 @@ else:
         }
         warehouse_ids = list(warehouse_by_id)
         if not warehouse_ids:
-            st.info("No SQL warehouses are available to your account.")
+            st.sidebar.info("No SQL warehouses are available to your account.")
         else:
             if st.session_state.get("warehouse_id") not in warehouse_ids:
                 st.session_state.pop("warehouse_id", None)
-            selected_warehouse_id = st.selectbox(
+            st.sidebar.markdown("### Filters")
+            selected_warehouse_id = st.sidebar.selectbox(
                 "SQL warehouse",
                 warehouse_ids,
                 index=None,
@@ -228,6 +204,19 @@ else:
                 key="warehouse_id",
             )
             if selected_warehouse_id:
+                if (
+                    st.session_state.get("_active_warehouse_id")
+                    != selected_warehouse_id
+                ):
+                    st.session_state.pop("catalog_name", None)
+                    st.session_state.pop("schema_name", None)
+                    st.session_state.pop("selected_table_names", None)
+                    st.session_state.pop("_active_catalog", None)
+                    st.session_state.pop("_active_schema", None)
+                    st.session_state["_active_warehouse_id"] = (
+                        selected_warehouse_id
+                    )
+
                 warehouse = warehouse_by_id[selected_warehouse_id]
                 try:
                     with st.spinner(
@@ -246,7 +235,82 @@ else:
                     )
                     try:
                         with connection.cursor() as cursor:
-                            show_catalog_browser(cursor)
+                            catalog_names = list_catalogs(cursor)
+                            if not catalog_names:
+                                st.sidebar.info(
+                                    "No Unity Catalog catalogs are available "
+                                    "to your account."
+                                )
+                            else:
+                                if (
+                                    st.session_state.get("catalog_name")
+                                    not in catalog_names
+                                ):
+                                    st.session_state["catalog_name"] = (
+                                        catalog_names[0]
+                                    )
+                                selected_catalog = st.sidebar.selectbox(
+                                    "Catalog",
+                                    catalog_names,
+                                    key="catalog_name",
+                                )
+                                if (
+                                    st.session_state.get("_active_catalog")
+                                    != selected_catalog
+                                ):
+                                    st.session_state.pop("schema_name", None)
+                                    st.session_state.pop(
+                                        "selected_table_names",
+                                        None,
+                                    )
+                                    st.session_state["_active_catalog"] = (
+                                        selected_catalog
+                                    )
+                                    st.session_state["_active_schema"] = None
+
+                                schema_names = list_schemas(
+                                    cursor,
+                                    selected_catalog,
+                                )
+                                if not schema_names:
+                                    st.sidebar.info(
+                                        "No schemas in this catalog are "
+                                        "available to your account."
+                                    )
+                                else:
+                                    if (
+                                        st.session_state.get("schema_name")
+                                        not in schema_names
+                                    ):
+                                        st.session_state["schema_name"] = (
+                                            schema_names[0]
+                                        )
+                                    selected_schema = st.sidebar.selectbox(
+                                        "Schema",
+                                        schema_names,
+                                        key="schema_name",
+                                    )
+                                    schema_scope = (
+                                        selected_catalog,
+                                        selected_schema,
+                                    )
+                                    if (
+                                        st.session_state.get("_active_schema")
+                                        != schema_scope
+                                    ):
+                                        st.session_state.pop(
+                                            "selected_table_names",
+                                            None,
+                                        )
+                                        st.session_state["_active_schema"] = (
+                                            schema_scope
+                                        )
+
+                                    show_catalog_browser(
+                                        cursor,
+                                        selected_catalog,
+                                        selected_schema,
+                                    )
                     finally:
                         connection.close()
                 except DatabricksCatalogConfigurationError as error:
