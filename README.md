@@ -23,21 +23,21 @@ selected theme.
 
 ## Deploy to Databricks Apps
 
-The app needs a SQL warehouse resource and user authorization configured in
-Databricks:
+The app uses the signed-in user's permissions to list and connect to their
+available SQL warehouses:
 
-1. Add a SQL warehouse under the app's **Settings → Resources**, using the
-   default resource key `sql-warehouse` and granting the app **Can use**.
-   `app.yaml` maps this resource to `DATABRICKS_WAREHOUSE_ID`.
-2. Under **Settings → User authorization**, add the `sql` scope and save.
-3. Give each app user the required permission to use the warehouse and discover
-   the Unity Catalog metadata they should see.
-4. Deploy or redeploy the app.
+1. Under **Settings → User authorization**, add the `sql` scope and save.
+2. Give each app user permission to use the SQL warehouses and discover the
+   Unity Catalog metadata they should see.
+3. Deploy or redeploy the app.
 
 The app uses the `X-Forwarded-Access-Token` supplied by Databricks Apps for each
 request. It does not fall back to the app service principal for catalog queries.
-This keeps metadata discovery scoped to the signed-in user. Local runs do not
-receive this forwarded token and therefore cannot browse catalogs.
+The user selects a warehouse from the warehouses visible to their account. If
+the selected warehouse is stopped, the app requests that Databricks start it
+and waits for it to be ready before querying. Starting a warehouse may incur
+compute costs. Local runs do not receive the forwarded token and cannot list
+warehouses or browse catalogs.
 
 ## Metadata displayed
 
@@ -61,7 +61,7 @@ python -m pip install -r requirements.txt
 - `assets/css/` - Light and dark theme stylesheets
 - `images/` - Screenshots of the light and dark themes
 - `tests/` - Unit tests
-- `app.yaml` - Databricks Apps run command and warehouse resource mapping
+- `app.yaml` - Databricks Apps run command
 
 Run the unit tests from the project directory with:
 

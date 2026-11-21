@@ -1,5 +1,6 @@
 streamlit>=1.37
 databricks-sql-connector>=4.0,<5
+requests>=2.31,<3
 pandas
 numpy
 plotly

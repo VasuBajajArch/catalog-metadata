@@ -6,12 +6,15 @@ import streamlit as st
 from databricks.sql.exc import Error as DatabricksSqlError
 
 from src.databricks_catalog import (
+    DatabricksApiError,
     DatabricksCatalogConfigurationError,
     connect_to_sql_warehouse,
+    ensure_sql_warehouse_running,
     get_user_access_token,
     list_catalogs,
     list_column_metadata,
     list_schemas,
+    list_sql_warehouses,
     list_table_metadata,
 )
 
@@ -192,25 +195,63 @@ user_access_token = get_user_access_token(st.context.headers)
 if not user_access_token:
     st.info(
         "Sign in through the Databricks app with user authorization enabled "
-        "to browse catalogs using your permissions."
+        "to select a SQL warehouse and browse catalogs using your permissions."
     )
 else:
-    connection = None
-    cursor = None
     try:
-        connection = connect_to_sql_warehouse(
+        workspace_host = os.getenv("DATABRICKS_HOST")
+        warehouses = list_sql_warehouses(
             user_access_token,
-            os.getenv("DATABRICKS_WAREHOUSE_ID"),
-            os.getenv("DATABRICKS_HOST"),
+            workspace_host,
         )
-        cursor = connection.cursor()
-        show_catalog_browser(cursor)
-    except DatabricksCatalogConfigurationError as error:
+    except (DatabricksApiError, DatabricksCatalogConfigurationError) as error:
         st.error(str(error))
-    except DatabricksSqlError as error:
-        st.error(f"Could not load Unity Catalog metadata: {error}")
-    finally:
-        if cursor is not None:
-            cursor.close()
-        if connection is not None:
-            connection.close()
+    else:
+        warehouse_by_id = {
+            str(warehouse["id"]): warehouse for warehouse in warehouses
+        }
+        warehouse_ids = list(warehouse_by_id)
+        if not warehouse_ids:
+            st.info("No SQL warehouses are available to your account.")
+        else:
+            if st.session_state.get("warehouse_id") not in warehouse_ids:
+                st.session_state.pop("warehouse_id", None)
+            selected_warehouse_id = st.selectbox(
+                "SQL warehouse",
+                warehouse_ids,
+                index=None,
+                placeholder="Select a warehouse",
+                format_func=lambda warehouse_id: (
+                    f"{warehouse_by_id[warehouse_id]['name']} "
+                    f"({warehouse_by_id[warehouse_id].get('state', 'UNKNOWN')})"
+                ),
+                key="warehouse_id",
+            )
+            if selected_warehouse_id:
+                warehouse = warehouse_by_id[selected_warehouse_id]
+                try:
+                    with st.spinner(
+                        f"Starting {warehouse['name']} if it is stopped..."
+                    ):
+                        ensure_sql_warehouse_running(
+                            user_access_token,
+                            workspace_host,
+                            selected_warehouse_id,
+                        )
+
+                    connection = connect_to_sql_warehouse(
+                        user_access_token,
+                        selected_warehouse_id,
+                        workspace_host,
+                    )
+                    try:
+                        with connection.cursor() as cursor:
+                            show_catalog_browser(cursor)
+                    finally:
+                        connection.close()
+                except DatabricksCatalogConfigurationError as error:
+                    st.error(str(error))
+                except DatabricksApiError as error:
+                    st.error(f"Could not start the selected warehouse: {error}")
+                except DatabricksSqlError as error:
+                    st.error(f"Could not load Unity Catalog metadata: {error}")
