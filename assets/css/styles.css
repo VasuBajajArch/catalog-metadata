@@ -234,14 +234,14 @@
 .metadata-table {
     width: 100%;
     border-collapse: collapse;
-    border: 1px solid #cfd5df;
+    border: 1px solid #8e9bb0 !important;
     border-radius: 6px;
     overflow: hidden;
 }
 
 .metadata-table th,
 .metadata-table td {
-    border: 1px solid #cfd5df;
+    border: 1px solid #8e9bb0 !important;
     padding: 8px 10px;
     text-align: left;
 }
