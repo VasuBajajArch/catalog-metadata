@@ -263,7 +263,8 @@ class TestDatabricksCatalog(unittest.TestCase):
 
         with self.assertRaisesRegex(
             DatabricksApiError,
-            "GET /api/2.0/sql/warehouses returned HTTP 403.*sql.*permission",
+            "GET /api/2.0/sql/warehouses returned HTTP 403.*sql.*consent"
+            ".*DATABRICKS_HOST.*same workspace.*permission",
         ):
             list_sql_warehouses("user-token", "workspace.example")
 

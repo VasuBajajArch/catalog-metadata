@@ -27,6 +27,7 @@ The app uses the signed-in user's permissions to list and connect to their
 available SQL warehouses:
 
 1. Under **Settings → User authorization**, add the `sql` scope and save.
+   When prompted, app users must consent to the requested scope.
 2. Give each app user permission to use the SQL warehouses and discover the
    Unity Catalog metadata they should see.
 3. Deploy or redeploy the app.
@@ -37,8 +38,9 @@ The user selects a warehouse from the warehouses visible to their account. If
 the selected warehouse is stopped, the app requests that Databricks start it
 and waits for it to be ready before querying. Starting a warehouse may incur
 compute costs, but a running warehouse does not grant users permission to use
-it. Local runs do not receive the forwarded token and cannot list warehouses or
-browse catalogs.
+it. The forwarded user token is valid only in the workspace where the app is
+deployed, so `DATABRICKS_HOST` must point to that same workspace. Local runs do
+not receive the forwarded token and cannot list warehouses or browse catalogs.
 
 ## Metadata displayed
 

@@ -74,9 +74,11 @@ def _workspace_api_request(method, access_token, workspace_host, path, **kwargs)
             message += f": {detail}"
         if response.status_code in (401, 403):
             message += (
-                ". Verify the app's `sql` user-authorization scope and that "
-                "the signed-in user has permission to use a SQL warehouse. "
-                "Starting a warehouse does not grant permission."
+                ". Verify the app's `sql` user-authorization scope and user "
+                "consent, that `DATABRICKS_HOST` is the same workspace where "
+                "the app is deployed, and that the signed-in user can use a "
+                "SQL warehouse. Starting a warehouse does not grant "
+                "permission."
             )
         raise DatabricksApiError(message)
 
