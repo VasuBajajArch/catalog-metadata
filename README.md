@@ -36,8 +36,9 @@ request. It does not fall back to the app service principal for catalog queries.
 The user selects a warehouse from the warehouses visible to their account. If
 the selected warehouse is stopped, the app requests that Databricks start it
 and waits for it to be ready before querying. Starting a warehouse may incur
-compute costs. Local runs do not receive the forwarded token and cannot list
-warehouses or browse catalogs.
+compute costs, but a running warehouse does not grant users permission to use
+it. Local runs do not receive the forwarded token and cannot list warehouses or
+browse catalogs.
 
 ## Metadata displayed
 

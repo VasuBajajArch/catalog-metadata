@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch
+from types import ModuleType
+from unittest.mock import Mock, patch
 
 from src.databricks_catalog import (
     DatabricksApiError,
@@ -165,6 +166,29 @@ class TestDatabricksCatalog(unittest.TestCase):
         with self.assertRaises(DatabricksCatalogConfigurationError):
             list_sql_warehouses("", "workspace.example")
 
+    def test_connect_to_sql_warehouse_uses_workspace_host_and_user_token(
+        self,
+    ):
+        databricks_package = ModuleType("databricks")
+        sql_module = ModuleType("databricks.sql")
+        sql_module.connect = Mock()
+        databricks_package.sql = sql_module
+
+        from src.databricks_catalog import connect_to_sql_warehouse
+
+        with patch.dict("sys.modules", {"databricks": databricks_package}):
+            connect_to_sql_warehouse(
+                "user-token",
+                "warehouse-id",
+                "https://workspace.example",
+            )
+
+        sql_module.connect.assert_called_once_with(
+            server_hostname="workspace.example",
+            http_path="/sql/1.0/warehouses/warehouse-id",
+            access_token="user-token",
+        )
+
     @patch("src.databricks_catalog.requests.request")
     def test_start_stopped_warehouse_then_wait_until_running(self, request):
         request.side_effect = [
@@ -237,7 +261,10 @@ class TestDatabricksCatalog(unittest.TestCase):
             status_code=403,
         )
 
-        with self.assertRaisesRegex(DatabricksApiError, "sql.*permission"):
+        with self.assertRaisesRegex(
+            DatabricksApiError,
+            "GET /api/2.0/sql/warehouses returned HTTP 403.*sql.*permission",
+        ):
             list_sql_warehouses("user-token", "workspace.example")
 
     def test_workspace_host_must_use_https(self):

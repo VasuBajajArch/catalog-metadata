@@ -66,13 +66,17 @@ def _workspace_api_request(method, access_token, workspace_host, path, **kwargs)
         detail = None
         if isinstance(error_body, dict):
             detail = error_body.get("message") or error_body.get("error_code")
-        message = f"Databricks workspace API returned HTTP {response.status_code}"
+        message = (
+            f"Databricks workspace API request {method} {path} returned "
+            f"HTTP {response.status_code}"
+        )
         if detail:
             message += f": {detail}"
         if response.status_code in (401, 403):
             message += (
-                ". Check that the app has the `sql` user-authorization scope "
-                "and that you have permission to use this warehouse."
+                ". Verify the app's `sql` user-authorization scope and that "
+                "the signed-in user has permission to use a SQL warehouse. "
+                "Starting a warehouse does not grant permission."
             )
         raise DatabricksApiError(message)
 
@@ -258,7 +262,7 @@ def connect_to_sql_warehouse(access_token, warehouse_id, workspace_host):
     from databricks import sql
 
     return sql.connect(
-        server_hostname=parsed_host.hostname,
+        server_hostname=host,
         http_path=f"/sql/1.0/warehouses/{warehouse_id}",
         access_token=access_token,
     )

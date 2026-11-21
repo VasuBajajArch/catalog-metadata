@@ -1,0 +1,5 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        ".table_catalog/bin/python": true
+    }
+}
