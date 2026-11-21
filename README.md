@@ -10,16 +10,17 @@ The app reads metadata only; it does not display table rows.
 ## Themes
 
 Use the **Light theme** toggle in the sidebar to switch between light and dark
-appearance. The sidebar, selectors, dropdown menus, and app header adapt to the
-selected theme.
+appearance. The sidebar, selectors, dropdown menus, headings, text, and table
+borders adapt to the selected theme. Column metadata tables use contrasting
+text, headers, and borders in both themes.
 
 ### Light theme
 
-![Superstore Table Catalog in light theme](images/light_theme.png)
+![Superstore Table Catalog in light theme](images/light_theme_dbx.png)
 
 ### Dark theme
 
-![Superstore Table Catalog in dark theme](images/dark_theme.png)
+![Superstore Table Catalog in dark theme](images/dark_theme_dbx.png)
 
 ## Deploy to Databricks Apps
 
@@ -44,7 +45,8 @@ not receive the forwarded token and cannot list warehouses or browse catalogs.
 
 ## Metadata displayed
 
-For visible tables and views, the app displays the table type, owner, comment,
+Use the sidebar filters to select a SQL warehouse, catalog, and schema. For
+visible tables and views, the app displays the table type, owner, comment,
 creation and last-altered timestamps, and column names, data types, nullability,
 and comments. It queries Unity Catalog `information_schema` metadata and uses
 parameterized filters for schema and table names. Unity Catalog only returns
