@@ -1,0 +1,223 @@
+/* Layout and spacing */
+[data-testid="stSidebar"] {
+    min-width: 260px;
+    background: #f8f9fc;
+}
+
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    padding-top: 1.5rem;
+    background: #f8f9fc;
+}
+
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+    color: #18243d;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="input"] > div {
+    background: #ffffff;
+    border-color: #b8c1d1;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] *,
+[data-testid="stSidebar"] [data-baseweb="input"] input {
+    color: #18243d;
+}
+
+[data-testid="stSidebar"] [data-baseweb="tag"] {
+    background: #edf1fc;
+    border-color: #b8c1d1;
+}
+
+[data-testid="stSidebar"] [data-baseweb="tag"] span {
+    color: #18243d;
+}
+
+[data-testid="stSidebar"] [data-testid="stSlider"] {
+    color: #18243d;
+}
+
+[data-baseweb="popover"],
+[data-baseweb="popover"] [role="listbox"],
+[data-baseweb="popover"] [role="option"] {
+    background: #ffffff;
+    color: #18243d;
+}
+
+[data-baseweb="popover"] [role="option"] * {
+    color: #18243d;
+}
+
+[data-baseweb="popover"] [role="option"]:hover {
+    background: #edf1fc;
+}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button {
+    background: #ffffff;
+    color: #18243d;
+    border: 1px solid #b8c1d1;
+}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {
+    background: #edf1fc;
+    color: #18243d;
+    border-color: #4a72b8;
+}
+
+[data-testid="stApp"],
+[data-testid="stHeader"] {
+    background: #ffffff;
+    color: #18243d;
+}
+
+[data-testid="stAppViewContainer"] {
+    background: #ffffff;
+}
+
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+[data-testid="stSidebar"] {
+    position: relative;
+    z-index: 1;
+}
+
+.catalog-title {
+    color: #18243d;
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+}
+
+.metrics {
+    display: flex;
+    justify-content: space-around;
+    margin: 0 0 2rem 0;
+}
+
+.metric {
+    text-align: center;
+    min-width: 120px;
+}
+
+.metric-value {
+    color: #565656;
+    font-size: 34px;
+    font-weight: 500;
+}
+
+.metric-label {
+    color: #4d4d4d;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.table-card {
+    border: 1px solid #cfd5df;
+    border-radius: 6px;
+    background: #fff;
+    min-height: 205px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(20, 38, 70, 0.03);
+}
+
+.card-header {
+    background: #edf1fc;
+    border-bottom: 1px solid #cfd5df;
+    padding: 10px 12px;
+}
+
+.card-name {
+    color: #27344d;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.card-schema {
+    color: #6b7ca1;
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.card-body {
+    padding: 18px 12px 12px 12px;
+}
+
+.card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.card-stat-value {
+    color: #666;
+    font-size: 25px;
+}
+
+.card-stat-label {
+    color: #666;
+    font-size: 12px;
+}
+
+.card-detail {
+    color: #7c879c;
+    font-size: 12px;
+    line-height: 1.75;
+}
+
+.card-detail strong {
+    color: #68748a;
+}
+
+.table-card.card-base-table {
+    border-left: 4px solid #4a72b8;
+}
+
+.table-card.card-view {
+    border-left: 4px solid #1f9d55;
+}
+
+.table-card.card-materialized-view {
+    border-left: 4px solid #9b6acb;
+}
+
+.card-base-table .card-header {
+    background: #edf1fc;
+    border-bottom-color: #b9c8e6;
+}
+
+.card-view .card-header {
+    background: #e8f6ed;
+    border-bottom-color: #b8dac5;
+}
+
+.card-materialized-view .card-header {
+    background: #f2ebf8;
+    border-bottom-color: #d1bee2;
+}
+
+.table-type-badge {
+    display: inline-block;
+    border-radius: 10px;
+    padding: 1px 7px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badge-base-table {
+    background: #4a72b8;
+}
+
+.badge-view {
+    background: #1f9d55;
+}
+
+.badge-materialized-view {
+    background: #9b6acb;
+}

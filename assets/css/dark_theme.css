@@ -1,0 +1,115 @@
+/* Dark application shell */
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"] {
+    background: #0e1117;
+    color: #fafafa;
+}
+
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"] {
+    background: #0e1117;
+    color: #fafafa;
+}
+
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    background: #262730;
+}
+
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span {
+    color: #fafafa;
+}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button {
+    background: #262730;
+    color: #fafafa;
+    border: 1px solid #686b78;
+}
+
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {
+    background: #343746;
+    color: #ffffff;
+    border-color: #8ba8d7;
+}
+
+.catalog-title,
+.metric-value,
+.metric-label,
+.card-name,
+.card-stat-value,
+.card-stat-label {
+    color: #fafafa;
+}
+
+[data-testid="stApp"] h1,
+[data-testid="stApp"] h2,
+[data-testid="stApp"] h3,
+[data-testid="stApp"] p,
+[data-testid="stApp"] label {
+    color: #fafafa;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="input"] > div,
+[data-testid="stSidebar"] [data-baseweb="tag"] {
+    background: #343746;
+    color: #fafafa;
+    border-color: #686b78;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] *,
+[data-testid="stSidebar"] [data-baseweb="input"] input,
+[data-testid="stSidebar"] [data-baseweb="tag"] span {
+    color: #fafafa;
+}
+
+[data-testid="stSidebar"] [data-testid="stSlider"] {
+    color: #fafafa;
+}
+
+[data-baseweb="popover"],
+[data-baseweb="popover"] [role="listbox"],
+[data-baseweb="popover"] [role="option"] {
+    background: #262730;
+    color: #fafafa;
+}
+
+[data-baseweb="popover"] [role="option"] * {
+    color: #fafafa;
+}
+
+[data-baseweb="popover"] [role="option"]:hover {
+    background: #343746;
+}
+
+.table-card {
+    background: #262730;
+    border-color: #3d404d;
+}
+
+.card-header {
+    border-bottom-color: #464b5a;
+}
+
+.card-base-table .card-header {
+    background: #29364f;
+}
+
+.card-view .card-header {
+    background: #233d2d;
+}
+
+.card-materialized-view .card-header {
+    background: #3b3048;
+}
+
+.card-schema,
+.card-detail,
+.card-detail strong {
+    color: #c9cbd1;
+}

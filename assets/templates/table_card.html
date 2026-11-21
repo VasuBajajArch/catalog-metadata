@@ -1,0 +1,29 @@
+<div class="table-card {{ card_type_class }}">
+  <div class="card-header">
+    <div class="card-name">{{ table_name }}</div>
+    <div class="card-schema">{{ database }}.{{ schema }}</div>
+  </div>
+  <div class="card-body">
+    <div class="card-stats">
+      <div>
+        <div class="card-stat-value">{{ row_display }}</div>
+        <div class="card-stat-label">Rows</div>
+      </div>
+      <div>
+        <div class="card-stat-value">{{ size_display }}</div>
+        <div class="card-stat-label">MB</div>
+      </div>
+      <div>
+        <div class="card-stat-value">{{ column_count }}</div>
+        <div class="card-stat-label">Columns</div>
+      </div>
+    </div>
+    <div class="card-detail">
+      <strong>▦ Table Type:</strong>
+      <span class="table-type-badge {{ badge_class }}">{{ table_type }}</span><br>
+      <strong>● Owner:</strong> {{ owner }}<br>
+      <strong>▣ Primary Key:</strong> {{ primary_key }}<br>
+      <strong>▣ Created On:</strong> {{ created }}
+    </div>
+  </div>
+</div>
