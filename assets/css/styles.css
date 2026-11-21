@@ -76,6 +76,15 @@
     background: #ffffff;
 }
 
+[data-testid="stApp"] h1,
+[data-testid="stApp"] h2,
+[data-testid="stApp"] h3,
+[data-testid="stApp"] p,
+[data-testid="stApp"] label,
+[data-testid="stApp"] [data-testid="stMarkdownContainer"] {
+    color: #18243d;
+}
+
 [data-testid="stApp"],
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -220,4 +229,30 @@
 
 .badge-materialized-view {
     background: #9b6acb;
+}
+
+.metadata-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #cfd5df;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.metadata-table th,
+.metadata-table td {
+    border: 1px solid #cfd5df;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+.metadata-table th {
+    background: #edf1fc;
+    color: #18243d;
+    font-weight: 600;
+}
+
+.metadata-table td {
+    background: #ffffff;
+    color: #18243d;
 }

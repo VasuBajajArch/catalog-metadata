@@ -113,3 +113,22 @@
 .card-detail strong {
     color: #c9cbd1;
 }
+
+.metadata-table {
+    border-color: #3d404d;
+}
+
+.metadata-table th,
+.metadata-table td {
+    border-color: #3d404d;
+}
+
+.metadata-table th {
+    background: #1b1d24;
+    color: #fafafa;
+}
+
+.metadata-table td {
+    background: #0e1117;
+    color: #fafafa;
+}

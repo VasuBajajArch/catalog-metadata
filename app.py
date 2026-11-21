@@ -159,10 +159,13 @@ def show_catalog_browser(cursor, selected_catalog, selected_schema):
                     "interact with it."
                 )
             else:
-                st.dataframe(
-                    table_columns,
-                    use_container_width=True,
-                    hide_index=True,
+                st.markdown(
+                    table_columns.fillna("").to_html(
+                        index=False,
+                        escape=True,
+                        classes="metadata-table",
+                    ),
+                    unsafe_allow_html=True,
                 )
 
 
