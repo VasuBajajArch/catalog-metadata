@@ -1,10 +1,16 @@
+"""Unit tests for Databricks API and metadata helpers."""
+
+# Test names serve as their documentation; test doubles intentionally expose
+# only the subset of the production interface each test needs.
+# pylint: disable=missing-function-docstring,too-few-public-methods
+
 import unittest
-from types import ModuleType
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from src.databricks_catalog import (
     DatabricksApiError,
     DatabricksCatalogConfigurationError,
+    connect_to_sql_warehouse,
     ensure_sql_warehouse_running,
     fetch_dataframe,
     get_user_access_token,
@@ -18,6 +24,8 @@ from src.databricks_catalog import (
 
 
 class FakeCursor:
+    """Minimal cursor test double that captures SQL queries."""
+
     def __init__(self, columns=(), rows=()):
         self.description = [(column,) for column in columns]
         self.rows = rows
@@ -33,6 +41,8 @@ class FakeCursor:
 
 
 class FakeResponse:
+    """Minimal response test double for workspace API calls."""
+
     def __init__(self, payload, status_code=200):
         self.payload = payload
         self.status_code = status_code
@@ -43,6 +53,8 @@ class FakeResponse:
 
 
 class TestDatabricksCatalog(unittest.TestCase):
+    """Tests for workspace API access and metadata queries."""
+
     def test_user_token_header_lookup_is_case_insensitive(self):
         self.assertEqual(
             get_user_access_token(
@@ -170,24 +182,18 @@ class TestDatabricksCatalog(unittest.TestCase):
         with self.assertRaises(DatabricksCatalogConfigurationError):
             list_sql_warehouses("", "workspace.example")
 
+    @patch("src.databricks_catalog.sql.connect")
     def test_connect_to_sql_warehouse_uses_workspace_host_and_user_token(
         self,
+        connect,
     ):
-        databricks_package = ModuleType("databricks")
-        sql_module = ModuleType("databricks.sql")
-        sql_module.connect = Mock()
-        databricks_package.sql = sql_module
+        connect_to_sql_warehouse(
+            "user-token",
+            "warehouse-id",
+            "https://workspace.example",
+        )
 
-        from src.databricks_catalog import connect_to_sql_warehouse
-
-        with patch.dict("sys.modules", {"databricks": databricks_package}):
-            connect_to_sql_warehouse(
-                "user-token",
-                "warehouse-id",
-                "https://workspace.example",
-            )
-
-        sql_module.connect.assert_called_once_with(
+        connect.assert_called_once_with(
             server_hostname="workspace.example",
             http_path="/sql/1.0/warehouses/warehouse-id",
             access_token="user-token",

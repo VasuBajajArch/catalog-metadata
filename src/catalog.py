@@ -1,3 +1,5 @@
+"""Utilities for loading and formatting catalog metadata."""
+
 from pathlib import Path
 
 import pandas as pd

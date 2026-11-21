@@ -1,8 +1,11 @@
+"""Databricks workspace API and Unity Catalog SQL helpers."""
+
 import time
 from urllib.parse import quote, urlsplit
 
 import pandas as pd
 import requests
+from databricks import sql
 
 
 class DatabricksCatalogConfigurationError(ValueError):
@@ -28,7 +31,12 @@ def _workspace_url(workspace_host, path):
         or not parsed_host.hostname
         or parsed_host.username
         or parsed_host.password
-        or parsed_host.path not in ("", "/")
+    ):
+        raise DatabricksCatalogConfigurationError(
+            "The Databricks workspace host is invalid."
+        )
+    if (
+        parsed_host.path not in ("", "/")
         or parsed_host.query
         or parsed_host.fragment
     ):
@@ -261,8 +269,6 @@ def connect_to_sql_warehouse(access_token, warehouse_id, workspace_host):
 
     host = urlsplit(_workspace_url(workspace_host, "")).hostname
 
-    from databricks import sql
-
     return sql.connect(
         server_hostname=host,
         http_path=f"/sql/1.0/warehouses/{warehouse_id}",
@@ -274,7 +280,7 @@ def quote_identifier(identifier):
     """Quote a SQL identifier, escaping embedded backticks."""
     if not identifier:
         raise ValueError("SQL identifiers must not be empty.")
-    return "`{}`".format(str(identifier).replace("`", "``"))
+    return f"`{str(identifier).replace('`', '``')}`"
 
 
 def fetch_dataframe(cursor, query, parameters=()):

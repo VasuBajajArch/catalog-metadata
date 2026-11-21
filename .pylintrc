@@ -1,0 +1,17 @@
+[MAIN]
+
+[MESSAGES CONTROL]
+disable=
+
+[REPORTS]
+score=no
+
+[BASIC]
+good-names=i,j,k,_,df
+
+[DESIGN]
+max-args=8
+max-positional-arguments=8
+max-locals=17
+max-branches=13
+max-bool-expr=7

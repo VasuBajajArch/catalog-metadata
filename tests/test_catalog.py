@@ -1,3 +1,9 @@
+"""Unit tests for local catalog metadata utilities."""
+
+# Test names serve as their documentation; test doubles intentionally expose
+# only the subset of the production interface each test needs.
+# pylint: disable=missing-function-docstring,too-few-public-methods
+
 import tempfile
 import unittest
 from pathlib import Path
@@ -67,6 +73,8 @@ def make_catalog():
 
 
 class TestLoadCatalog(unittest.TestCase):
+    """Tests for catalog CSV loading and validation."""
+
     def test_load_catalog_reads_valid_csv(self):
         with tempfile.TemporaryDirectory() as directory:
             csv_path = Path(directory) / "catalog.csv"
@@ -86,6 +94,8 @@ class TestLoadCatalog(unittest.TestCase):
 
 
 class TestFilterCatalog(unittest.TestCase):
+    """Tests for filtering and sorting catalog records."""
+
     def test_filter_catalog_combines_database_schema_and_owner(self):
         filtered = filter_catalog(
             make_catalog(),
@@ -122,6 +132,8 @@ class TestFilterCatalog(unittest.TestCase):
 
 
 class TestFormatting(unittest.TestCase):
+    """Tests for row and size display formatting."""
+
     def test_format_row_label_uses_millions(self):
         self.assertEqual(format_row_label(2_500_000), "2.50M")
 
@@ -136,6 +148,8 @@ class TestFormatting(unittest.TestCase):
 
 
 class TestTableTypeStyle(unittest.TestCase):
+    """Tests for mapping table types to display styles."""
+
     def test_base_table_style(self):
         self.assertEqual(
             get_table_type_style("BASE TABLE"),
@@ -160,6 +174,8 @@ class TestTableTypeStyle(unittest.TestCase):
 
 
 class TestSummaryAndCard(unittest.TestCase):
+    """Tests for catalog summaries and table card context."""
+
     def test_summarize_catalog(self):
         summary = summarize_catalog(make_catalog())
         self.assertEqual(summary["table_count"], 3)

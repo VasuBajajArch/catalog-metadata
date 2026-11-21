@@ -1,3 +1,5 @@
+"""Streamlit interface for browsing Databricks Unity Catalog metadata."""
+
 import os
 from pathlib import Path
 
@@ -29,15 +31,18 @@ st.set_page_config(
 )
 
 
-def load_css(file_path, dark_theme):
+def load_css(file_path, use_dark_theme):
     """Load the base stylesheet and optionally the dark-theme overrides."""
-    with open(file_path) as css_file:
+    with open(file_path, encoding="utf-8") as css_file:
         st.markdown(
             f"<style>{css_file.read()}</style>",
             unsafe_allow_html=True,
         )
-    if dark_theme:
-        with open(ASSETS_DIRECTORY / "css" / "dark_theme.css") as dark_css:
+    if use_dark_theme:
+        with open(
+            ASSETS_DIRECTORY / "css" / "dark_theme.css",
+            encoding="utf-8",
+        ) as dark_css:
             st.markdown(
                 f"<style>{dark_css.read()}</style>",
                 unsafe_allow_html=True,
@@ -61,19 +66,19 @@ st.caption(
 )
 
 
-def show_catalog_browser(cursor, selected_catalog, selected_schema):
+def show_catalog_browser(cursor_for_browser, catalog_name, schema_name):
     """Render table and column details for the selected catalog and schema."""
     table_metadata = list_table_metadata(
-        cursor,
-        selected_catalog,
-        selected_schema,
+        cursor_for_browser,
+        catalog_name,
+        schema_name,
     )
     if table_metadata.empty:
         st.info("No tables or views in this schema are available to your account.")
         return
 
     table_names = table_metadata["table_name"].astype(str).tolist()
-    st.subheader(f"{selected_catalog}.{selected_schema}")
+    st.subheader(f"{catalog_name}.{schema_name}")
     show_all_tables = st.checkbox(
         "Show details for all tables",
         value=True,
@@ -102,71 +107,76 @@ def show_catalog_browser(cursor, selected_catalog, selected_schema):
         table_metadata["table_name"].isin(selected_table_names)
     ]
     column_metadata = list_column_metadata(
-        cursor,
-        selected_catalog,
-        selected_schema,
+        cursor_for_browser,
+        catalog_name,
+        schema_name,
         selected_table_names,
     )
     st.caption(f"Showing details for {len(selected_metadata)} table(s).")
 
     for index, (_, table) in enumerate(selected_metadata.iterrows()):
-        table_name = str(table["table_name"])
         with st.expander(
-            f"{table_name} · {table['table_type']}",
+            f"{table['table_name']} · {table['table_type']}",
             expanded=len(selected_metadata) == 1 or index == 0,
         ):
-            detail_columns = st.columns(2)
-            detail_columns[0].write(f"**Type:** {table['table_type']}")
-            owner = table["table_owner"]
-            detail_columns[0].write(
-                f"**Owner:** {owner if pd.notna(owner) and owner else '—'}"
-            )
-            detail_columns[1].write(
-                f"**Created:** {table['created'] if pd.notna(table['created']) else '—'}"
-            )
-            detail_columns[1].write(
-                "**Last altered:** "
-                f"{table['last_altered'] if pd.notna(table['last_altered']) else '—'}"
-            )
-            comment = table["comment"]
-            if pd.notna(comment) and comment:
-                st.write(f"**Comment:** {comment}")
+            show_table_details(table, column_metadata)
 
-            table_columns = column_metadata[
-                column_metadata["table_name"]
-                .astype(str)
-                .str.casefold()
-                == table_name.casefold()
-            ][
-                [
-                    "column_name",
-                    "full_data_type",
-                    "is_nullable",
-                    "comment",
-                ]
-            ].rename(
-                columns={
-                    "column_name": "Column",
-                    "full_data_type": "Data type",
-                    "is_nullable": "Nullable",
-                    "comment": "Comment",
-                }
-            )
-            if table_columns.empty:
-                st.info(
-                    "No column metadata is visible for this table. "
-                    "Check that your Unity Catalog permissions allow you to "
-                    "interact with it."
-                )
-            else:
-                st.markdown(
-                    table_columns.fillna("").to_html(
-                        index=False,
-                        escape=True,
-                        classes="metadata-table",
-                    ),
-                    unsafe_allow_html=True,
-                )
+
+def show_table_details(table, column_metadata):
+    """Render a table's attributes and its visible column metadata."""
+    table_name = str(table["table_name"])
+    detail_columns = st.columns(2)
+    detail_columns[0].write(f"**Type:** {table['table_type']}")
+    owner = table["table_owner"]
+    detail_columns[0].write(
+        f"**Owner:** {owner if pd.notna(owner) and owner else '—'}"
+    )
+    detail_columns[1].write(
+        f"**Created:** {table['created'] if pd.notna(table['created']) else '—'}"
+    )
+    detail_columns[1].write(
+        "**Last altered:** "
+        f"{table['last_altered'] if pd.notna(table['last_altered']) else '—'}"
+    )
+    comment = table["comment"]
+    if pd.notna(comment) and comment:
+        st.write(f"**Comment:** {comment}")
+
+    table_columns = column_metadata[
+        column_metadata["table_name"]
+        .astype(str)
+        .str.casefold()
+        == table_name.casefold()
+    ][
+        [
+            "column_name",
+            "full_data_type",
+            "is_nullable",
+            "comment",
+        ]
+    ].rename(
+        columns={
+            "column_name": "Column",
+            "full_data_type": "Data type",
+            "is_nullable": "Nullable",
+            "comment": "Comment",
+        }
+    )
+    if table_columns.empty:
+        st.info(
+            "No column metadata is visible for this table. "
+            "Check that your Unity Catalog permissions allow you to "
+            "interact with it."
+        )
+    else:
+        st.markdown(
+            table_columns.fillna("").to_html(
+                index=False,
+                escape=True,
+                classes="metadata-table",
+            ),
+            unsafe_allow_html=True,
+        )
 
 
 user_access_token = get_user_access_token(st.context.headers)
@@ -237,8 +247,8 @@ else:
                         workspace_host,
                     )
                     try:
-                        with connection.cursor() as cursor:
-                            catalog_names = list_catalogs(cursor)
+                        with connection.cursor() as db_cursor:
+                            catalog_names = list_catalogs(db_cursor)
                             if not catalog_names:
                                 st.sidebar.info(
                                     "No Unity Catalog catalogs are available "
@@ -272,7 +282,7 @@ else:
                                     st.session_state["_active_schema"] = None
 
                                 schema_names = list_schemas(
-                                    cursor,
+                                    db_cursor,
                                     selected_catalog,
                                 )
                                 if not schema_names:
@@ -310,7 +320,7 @@ else:
                                         )
 
                                     show_catalog_browser(
-                                        cursor,
+                                        db_cursor,
                                         selected_catalog,
                                         selected_schema,
                                     )
