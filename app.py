@@ -1,22 +1,26 @@
+import os
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
+from databricks.sql.exc import Error as DatabricksSqlError
 
-from src.catalog import (
-    build_table_card_context,
-    create_template_environment,
-    filter_catalog,
-    load_catalog,
-    summarize_catalog,
+from src.databricks_catalog import (
+    DatabricksCatalogConfigurationError,
+    connect_to_sql_warehouse,
+    get_user_access_token,
+    list_catalogs,
+    list_column_metadata,
+    list_schemas,
+    list_table_metadata,
 )
 
 BASE_DIRECTORY = Path(__file__).resolve().parent
 ASSETS_DIRECTORY = BASE_DIRECTORY / "assets"
-DATA_DIRECTORY = BASE_DIRECTORY / "data"
 
 # Configure the page once before any widgets or rendered content.
 st.set_page_config(
-    page_title="Superstore App",
+    page_title="Unity Catalog Explorer",
     layout="wide",
     page_icon=":bar_chart:",
 )
@@ -48,100 +52,165 @@ with st.sidebar:
 
 dark_theme = not light_theme
 load_css(ASSETS_DIRECTORY / "css" / "styles.css", dark_theme)
-templates = create_template_environment(ASSETS_DIRECTORY)
-
-try:
-    table_information = load_catalog(DATA_DIRECTORY / "table_information.csv")
-except (FileNotFoundError, ValueError) as error:
-    # Stop rendering instead of continuing with an incomplete catalog.
-    st.error(str(error))
-    st.stop()
-
-with st.sidebar:
-    st.markdown("### View Details")
-
-    # Track every filter in Streamlit session state through stable widget keys.
-    order_by = st.selectbox(
-        "Order By",
-        ["A \u2192 Z", "Z \u2192 A"],
-        key="order_by",
-    )
-    database = st.selectbox(
-        "Database",
-        ["All"] + sorted(table_information["database"].dropna().unique()),
-        key="database",
-    )
-    schema = st.selectbox(
-        "Table Schema",
-        ["All"] + sorted(table_information["schema"].dropna().unique()),
-        key="schema",
-    )
-    owner = st.selectbox(
-        "Table Owner",
-        ["All"] + sorted(table_information["owner"].dropna().unique()),
-        key="owner",
-    )
-    table_types = st.multiselect(
-        "Table Type",
-        sorted(table_information["table_type"].dropna().unique()),
-        default=[],
-        key="table_type",
-    )
-
-    max_size = max(1.0, float(table_information["data_size_mb"].max()))
-    size_limit = st.slider(
-        "Data Size (MB)",
-        min_value=0.0,
-        max_value=float(round(max_size, 2)),
-        value=float(round(max_size, 2)),
-        step=0.1,
-        key="size_limit",
-    )
-
-    max_rows = max(1, int(table_information["number_of_rows"].max()))
-    row_limit = st.slider(
-        "Number of Rows",
-        min_value=0,
-        max_value=max_rows,
-        value=max_rows,
-        step=max(1, max_rows // 100),
-        key="row_limit",
-    )
-
-    if st.button("Clear Selections", use_container_width=True):
-        st.session_state.order_by = "A \u2192 Z"
-        st.session_state.database = "All"
-        st.session_state.schema = "All"
-        st.session_state.owner = "All"
-        st.session_state.table_type = []
-        st.session_state.size_limit = float(round(max_size, 2))
-        st.session_state.row_limit = max_rows
-        st.rerun()
-
-filtered_information = filter_catalog(
-    table_information,
-    database=database,
-    schema=schema,
-    owner=owner,
-    table_types=table_types,
-    size_limit=size_limit,
-    row_limit=row_limit,
-    order_by=order_by,
+st.title("Unity Catalog Explorer")
+st.caption(
+    "Browse the Unity Catalog metadata available to your Databricks account."
 )
 
-summary = summarize_catalog(filtered_information)
-st.markdown(
-    templates.get_template("catalog_metrics.html").render(**summary),
-    unsafe_allow_html=True,
-)
 
-cards_per_row = 3
-for start in range(0, len(filtered_information), cards_per_row):
-    columns = st.columns(cards_per_row)
-    card_rows = filtered_information.iloc[start:start + cards_per_row]
-    for column, (_, table_row) in zip(columns, card_rows.iterrows()):
-        card = templates.get_template("table_card.html").render(
-            **build_table_card_context(table_row)
+def show_catalog_browser(cursor):
+    """Render the catalog, schema, table, and table-column browser."""
+    catalog_names = list_catalogs(cursor)
+    if not catalog_names:
+        st.info("No Unity Catalog catalogs are available to your account.")
+        return
+
+    if st.session_state.get("catalog_name") not in catalog_names:
+        st.session_state["catalog_name"] = catalog_names[0]
+    selected_catalog = st.selectbox(
+        "Catalog",
+        catalog_names,
+        key="catalog_name",
+    )
+    if st.session_state.get("_active_catalog") != selected_catalog:
+        st.session_state.pop("schema_name", None)
+        st.session_state.pop("selected_table_names", None)
+        st.session_state["_active_catalog"] = selected_catalog
+        st.session_state["_active_schema"] = None
+
+    schema_names = list_schemas(cursor, selected_catalog)
+    if not schema_names:
+        st.info("No schemas in this catalog are available to your account.")
+        return
+
+    if st.session_state.get("schema_name") not in schema_names:
+        st.session_state["schema_name"] = schema_names[0]
+    selected_schema = st.selectbox(
+        "Schema",
+        schema_names,
+        key="schema_name",
+    )
+    schema_scope = (selected_catalog, selected_schema)
+    if st.session_state.get("_active_schema") != schema_scope:
+        st.session_state.pop("selected_table_names", None)
+        st.session_state["_active_schema"] = schema_scope
+
+    table_metadata = list_table_metadata(
+        cursor,
+        selected_catalog,
+        selected_schema,
+    )
+    if table_metadata.empty:
+        st.info("No tables or views in this schema are available to your account.")
+        return
+
+    table_names = table_metadata["table_name"].astype(str).tolist()
+    st.subheader(f"{selected_catalog}.{selected_schema}")
+    show_all_tables = st.checkbox(
+        "Show details for all tables",
+        value=True,
+        key="show_all_tables",
+    )
+    if show_all_tables:
+        selected_table_names = table_names
+    else:
+        previous_selection = st.session_state.get(
+            "selected_table_names",
+            [],
         )
-        column.markdown(card, unsafe_allow_html=True)
+        if not set(previous_selection).issubset(table_names):
+            st.session_state["selected_table_names"] = []
+        selected_table_names = st.multiselect(
+            "Select table(s)",
+            table_names,
+            key="selected_table_names",
+        )
 
+    if not selected_table_names:
+        st.info("Select one or more tables to see their details.")
+        return
+
+    selected_metadata = table_metadata[
+        table_metadata["table_name"].isin(selected_table_names)
+    ]
+    column_metadata = list_column_metadata(
+        cursor,
+        selected_catalog,
+        selected_schema,
+        selected_table_names,
+    )
+    st.caption(f"Showing details for {len(selected_metadata)} table(s).")
+
+    for index, (_, table) in enumerate(selected_metadata.iterrows()):
+        table_name = str(table["table_name"])
+        with st.expander(
+            f"{table_name} · {table['table_type']}",
+            expanded=len(selected_metadata) == 1 or index == 0,
+        ):
+            detail_columns = st.columns(2)
+            detail_columns[0].write(f"**Type:** {table['table_type']}")
+            owner = table["table_owner"]
+            detail_columns[0].write(
+                f"**Owner:** {owner if pd.notna(owner) and owner else '—'}"
+            )
+            detail_columns[1].write(
+                f"**Created:** {table['created'] if pd.notna(table['created']) else '—'}"
+            )
+            detail_columns[1].write(
+                "**Last altered:** "
+                f"{table['last_altered'] if pd.notna(table['last_altered']) else '—'}"
+            )
+            comment = table["comment"]
+            if pd.notna(comment) and comment:
+                st.write(f"**Comment:** {comment}")
+
+            table_columns = column_metadata[
+                column_metadata["table_name"] == table_name
+            ][
+                [
+                    "column_name",
+                    "full_data_type",
+                    "is_nullable",
+                    "comment",
+                ]
+            ].rename(
+                columns={
+                    "column_name": "Column",
+                    "full_data_type": "Data type",
+                    "is_nullable": "Nullable",
+                    "comment": "Comment",
+                }
+            )
+            st.dataframe(
+                table_columns,
+                use_container_width=True,
+                hide_index=True,
+            )
+
+
+user_access_token = get_user_access_token(st.context.headers)
+if not user_access_token:
+    st.info(
+        "Sign in through the Databricks app with user authorization enabled "
+        "to browse catalogs using your permissions."
+    )
+else:
+    connection = None
+    cursor = None
+    try:
+        connection = connect_to_sql_warehouse(
+            user_access_token,
+            os.getenv("DATABRICKS_WAREHOUSE_ID"),
+            os.getenv("DATABRICKS_HOST"),
+        )
+        cursor = connection.cursor()
+        show_catalog_browser(cursor)
+    except DatabricksCatalogConfigurationError as error:
+        st.error(str(error))
+    except DatabricksSqlError as error:
+        st.error(f"Could not load Unity Catalog metadata: {error}")
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
