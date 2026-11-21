@@ -50,7 +50,8 @@
 [data-testid="stApp"] h2,
 [data-testid="stApp"] h3,
 [data-testid="stApp"] p,
-[data-testid="stApp"] label {
+[data-testid="stApp"] label,
+[data-testid="stApp"] [data-testid="stMarkdownContainer"] {
     color: #fafafa;
 }
 
